@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Whisper 语音识别</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
+        #result { margin-top: 20px; min-height: 100px; border: 1px solid #ddd; padding: 15px; white-space: pre-wrap; }
+        #audio-player { margin-top: 20px; width: 100%; }
+        .status { color: #666; font-style: italic; margin: 10px 0; }
+        .error { color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <h1>Whisper 语音识别演示</h1>
+    <button id="recordBtn" class="btn">开始录音</button>
+    <div class="status" id="status">准备就绪</div>
+    <div id="result">识别结果将显示在这里...</div>
+    <audio id="audio-player" controls></audio>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
