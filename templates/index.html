@@ -3,21 +3,68 @@
 <head>
     <title>Whisper 语音识别</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        .btn { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 5px; }
-        #result { margin-top: 20px; min-height: 100px; border: 1px solid #ddd; padding: 15px; white-space: pre-wrap; }
-        #audio-player { margin-top: 20px; width: 100%; }
-        .status { color: #666; font-style: italic; margin: 10px 0; }
-        .error { color: #d32f2f; }
+        /* 设置页面整体样式：字体、宽度、居中显示和内边距 */
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+
+        /* 按钮样式：内边距、字体大小、鼠标样式和间距 */
+        .btn { 
+            padding: 10px 20px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            margin: 5px; 
+        }
+
+        /* 识别结果显示区域样式 */
+        #result { 
+            margin-top: 20px; 
+            min-height: 100px; 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            white-space: pre-wrap; 
+        }
+
+        /* 音频播放器样式：全宽显示并有上边距 */
+        #audio-player { 
+            margin-top: 20px; 
+            width: 100%; 
+        }
+
+        /* 状态信息样式（如“准备就绪”、“录音中”等） */
+        .status { 
+            color: #666; 
+            font-style: italic; 
+            margin: 10px 0; 
+        }
+
+        /* 错误信息样式（红色） */
+        .error { 
+            color: #d32f2f; 
+        }
     </style>
 </head>
+
 <body>
+    <!-- 页面主标题 -->
     <h1>Whisper 语音识别演示</h1>
+
+    <!-- 录音按钮，点击后触发录音功能（由 JS 实现） -->
     <button id="recordBtn" class="btn">开始录音</button>
+
+    <!-- 显示当前系统状态（如“准备就绪”、“识别中”等） -->
     <div class="status" id="status">准备就绪</div>
+
+    <!-- 显示语音识别的文字结果 -->
     <div id="result">识别结果将显示在这里...</div>
+
+    <!-- 音频播放器，用于播放录音后的音频文件 -->
     <audio id="audio-player" controls></audio>
 
+    <!-- 引入外部 JavaScript 文件，实现录音和识别逻辑 -->
     <script src="/static/script.js"></script>
 </body>
 </html>

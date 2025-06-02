@@ -1,13 +1,16 @@
+// 获取页面中的 DOM 元素
 const recordBtn = document.getElementById('recordBtn');
 const resultDiv = document.getElementById('result');
 const audioPlayer = document.getElementById('audio-player');
 const statusDiv = document.getElementById('status');
 
 let mediaRecorder;
-let audioChunks = [];
+// 用于存储录音数据
+let audioChunks = []; 
+// 音频上下文（Web Audio API 对象）
 let audioContext = null;
 
-// 创建16kHz WAV格式的Blob
+// 将音频数据编码为 WAV 格式（16kHz、16bit PCM）
 function encodeWAV(samples) {
     const buffer = new ArrayBuffer(44 + samples.length * 2);
     const view = new DataView(buffer);
@@ -50,7 +53,7 @@ function encodeWAV(samples) {
     return new Blob([view], { type: 'audio/wav' });
 }
 
-// 降采样函数
+// 降采样函数（非16kHz时转换为16kHz）
 function downsampleBuffer(buffer, sampleRate, targetSampleRate) {
     if (targetSampleRate === sampleRate) {
         return buffer;
@@ -90,6 +93,7 @@ function createAudioContext() {
     return audioContext;
 }
 
+// 主流程：点击按钮开始或停止录音
 recordBtn.addEventListener('click', async () => {
     if (!mediaRecorder) {
         try {
@@ -147,6 +151,7 @@ recordBtn.addEventListener('click', async () => {
                     statusDiv.textContent = "正在识别语音...";
                     resultDiv.textContent = "识别中...";
                     
+                    // 调用模型接口
                     const formData = new FormData();
                     formData.append('audio', wavBlob, 'recording.wav');
                     
