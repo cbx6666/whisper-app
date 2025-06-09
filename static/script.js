@@ -150,10 +150,14 @@ recordBtn.addEventListener('click', async () => {
                     // 发送到后端识别
                     statusDiv.textContent = "正在识别语音...";
                     resultDiv.textContent = "识别中...";
+
+                    // 获取用户选择的模式
+                    const selectedMode = document.querySelector('input[name="mode"]:checked').value;
                     
                     // 调用模型接口
                     const formData = new FormData();
                     formData.append('audio', wavBlob, 'recording.wav');
+                    formData.append('mode', selectedMode); // 将模式添加到表单数据
                     
                     const response = await fetch('/transcribe', {
                         method: 'POST',

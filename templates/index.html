@@ -28,6 +28,16 @@
             white-space: pre-wrap; 
         }
 
+        /* 模式选择区域样式 */
+        #mode-selector {
+            margin: 15px 0;
+        }
+
+        #mode-selector label {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
         /* 音频播放器样式：全宽显示并有上边距 */
         #audio-player { 
             margin-top: 20px; 
@@ -51,6 +61,18 @@
 <body>
     <!-- 页面主标题 -->
     <h1>Whisper 语音识别演示</h1>
+
+    <!-- 模式选择器 -->
+    <div id="mode-selector">
+        <label>
+            <!-- 默认选中的中文识别模式 -->
+            <input type="radio" name="mode" value="chinese" checked> 中文识别
+        </label>
+        <label>
+            <!-- 英文翻译模式 -->
+            <input type="radio" name="mode" value="english"> 英文翻译
+        </label>
+    </div>
 
     <!-- 录音按钮，点击后触发录音功能（由 JS 实现） -->
     <button id="recordBtn" class="btn">开始录音</button>
