@@ -6,6 +6,8 @@
 pip install flask numpy librosa soundfile
 pip install transformers>=4.30.0 ctranslate2>=3.17.0
 pip install -U funasr
+pip install modelscope
+pip install requests
 ```
 
 ## 相关模型
@@ -13,6 +15,8 @@ pip install -U funasr
 - merged_model 微调后的模型与基础模型合并
 - ctranslate_model CTranslate2 格式的 Whisper 模型
 - FunASR 标点恢复模型
+- 在阿里云申请模型 api
+- 在火山引擎申请豆包语音合成 api
 
 ## 目录结构
 ```

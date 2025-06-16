@@ -3,12 +3,21 @@ const recordBtn = document.getElementById('recordBtn');
 const resultDiv = document.getElementById('result');
 const audioPlayer = document.getElementById('audio-player');
 const statusDiv = document.getElementById('status');
+const llmBtn = document.getElementById('llmBtn');
+const llmResultDiv = document.getElementById('llm-result');
+const llmModelSelect = document.getElementById('llm-model-select');
+const readAloudBtn = document.getElementById('readAloudBtn');
+const ttsVoiceSelect = document.getElementById('tts-voice-select');
 
 let mediaRecorder;
 // 用于存储录音数据
 let audioChunks = []; 
 // 音频上下文（Web Audio API 对象）
 let audioContext = null;
+
+// 用于播放TTS音频的Audio对象
+let ttsAudio = null;
+
 
 // 将音频数据编码为 WAV 格式（16kHz、16bit PCM）
 function encodeWAV(samples) {
@@ -120,6 +129,9 @@ recordBtn.addEventListener('click', async () => {
             
             mediaRecorder.onstop = async () => {
                 statusDiv.textContent = "正在处理音频...";
+                llmBtn.disabled = true;
+                llmResultDiv.textContent = "大模型回复将显示在这里...";
+                readAloudBtn.style.display = 'none';
                 
                 try {
                     // 将录音数据合并为Blob
@@ -174,8 +186,10 @@ recordBtn.addEventListener('click', async () => {
                         if (data.actual) {
                             resultDiv.innerHTML += `<br>实际采样率: ${data.actual}Hz，期望: 16000Hz`;
                         }
+                        llmBtn.disabled = true;
                     } else {
                         resultDiv.textContent = data.text;
+                        llmBtn.disabled = !(data.text && data.text.trim());
                     }
                     
                     statusDiv.textContent = "识别完成";
@@ -183,6 +197,7 @@ recordBtn.addEventListener('click', async () => {
                     console.error('音频处理错误:', e);
                     resultDiv.innerHTML = `<span class="error">处理错误: ${e.message}</span>`;
                     statusDiv.textContent = "处理失败";
+                    llmBtn.disabled = true;
                 } finally {
                     // 清理资源
                     if (audioContext) {
@@ -195,7 +210,12 @@ recordBtn.addEventListener('click', async () => {
             // 开始录音
             mediaRecorder.start();
             recordBtn.textContent = '停止录音';
+            recordBtn.classList.add('recording'); // [新增] 添加CSS类以改变颜色
             statusDiv.textContent = "录音中...";
+            resultDiv.textContent = "识别结果将显示在这里...";
+            llmResultDiv.textContent = "大模型回复将显示在这里...";
+            llmBtn.disabled = true;
+            readAloudBtn.style.display = 'none';
         } catch (err) {
             console.error('录音初始化失败:', err);
             statusDiv.innerHTML = `<span class="error">麦克风访问失败: ${err.message}</span>`;
@@ -216,6 +236,130 @@ recordBtn.addEventListener('click', async () => {
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
         mediaRecorder = null;
         recordBtn.textContent = '开始录音';
+        recordBtn.classList.remove('recording'); // [新增] 移除CSS类
         statusDiv.textContent = "正在处理录音...";
+    }
+});
+
+llmBtn.addEventListener('click', async () => {
+    const transcribedText = resultDiv.textContent;
+    const selectedModel = llmModelSelect.value;
+
+    if (!transcribedText || transcribedText.trim() === "" || transcribedText === "识别结果将显示在这里...") {
+        alert("没有可以发送的文本。");
+        return;
+    }
+
+    llmBtn.disabled = true;
+    llmResultDiv.textContent = `正在使用 ${selectedModel} 模型进行响应...`;
+    readAloudBtn.style.display = 'none';
+    
+    // 如果之前的TTS音频正在播放，则停止它
+    if (ttsAudio) {
+        ttsAudio.pause();
+        ttsAudio = null;
+    }
+
+    try {
+        const response = await fetch('/ask_llm', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                text: transcribedText,
+                model: selectedModel 
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`服务器错误: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            llmResultDiv.innerHTML = `<span class="error">错误: ${data.error}</span>`;
+        } else {
+            llmResultDiv.textContent = data.response;
+            if (data.response && data.response.trim()) {
+                readAloudBtn.style.display = 'inline-block';
+            }
+        }
+
+    } catch (e) {
+        console.error('调用大模型失败:', e);
+        llmResultDiv.innerHTML = `<span class="error">调用失败: ${e.message}</span>`;
+    } finally {
+        llmBtn.disabled = false; // 无论成功或失败，最后都重新启用按钮
+    }
+});
+
+// 为朗读按钮添加事件监听器 (调用后端API版本)
+readAloudBtn.addEventListener('click', async () => {
+    // 如果正在播放，则再次点击是停止
+    if (ttsAudio && !ttsAudio.paused) {
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+        readAloudBtn.textContent = '朗读';
+        return;
+    }
+
+    const textToRead = llmResultDiv.textContent;
+    const selectedVoice = ttsVoiceSelect.value; // 获取当前选中的音色
+
+    if (!textToRead || textToRead.trim() === "" || textToRead === "大模型回复将显示在这里...") {
+        return;
+    }
+
+    readAloudBtn.textContent = '生成中...';
+    readAloudBtn.disabled = true;
+
+    try {
+        const response = await fetch('/read_aloud', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            // 将文本和音色一起发送到后端
+            body: JSON.stringify({ text: textToRead, voice: selectedVoice }) 
+        });
+
+        if (!response.ok) {
+            // 如果返回的是JSON错误，则解析并显示
+            const errData = await response.json().catch(() => ({error: `服务器返回了不可读的错误: ${response.status}`}));
+            throw new Error(errData.error || `服务器错误: ${response.status}`);
+        }
+
+        // 成功获取音频流
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        ttsAudio = new Audio(audioUrl);
+        ttsAudio.play();
+        
+        readAloudBtn.textContent = '停止';
+
+        // 朗读结束时恢复按钮文本
+        ttsAudio.onended = () => {
+            readAloudBtn.textContent = '朗读';
+        };
+        // 播放出错时也恢复按钮
+        ttsAudio.onerror = () => {
+             readAloudBtn.textContent = '朗读';
+             alert('播放音频时出错。');
+        }
+
+    } catch (e) {
+        console.error("朗读失败:", e);
+        // 在现有回复下方追加错误信息，而不是覆盖
+        const errorSpan = document.createElement('span');
+        errorSpan.className = 'error';
+        errorSpan.innerHTML = `<br>朗读失败: ${e.message}`;
+        llmResultDiv.appendChild(errorSpan);
+        
+        readAloudBtn.textContent = '朗读';
+    } finally {
+        readAloudBtn.disabled = false;
     }
 });

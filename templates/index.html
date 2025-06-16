@@ -1,92 +1,289 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>Whisper 语音识别</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 语音助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* 设置页面整体样式：字体、宽度、居中显示和内边距 */
-        body { 
-            font-family: Arial, sans-serif; 
-            max-width: 600px; 
-            margin: 0 auto; 
-            padding: 20px; 
+        /* CSS 变量，用于统一管理颜色、圆角等样式 */
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --record-color: #dc3545;
+            --record-hover: #c82333;
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --text-light: #6c757d;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.07);
+            --border-radius: 12px;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
         }
 
-        /* 按钮样式：内边距、字体大小、鼠标样式和间距 */
-        .btn { 
-            padding: 10px 20px; 
-            font-size: 16px; 
-            cursor: pointer; 
-            margin: 5px; 
+        /* 主容器 */
+        .container {
+            width: 100%;
+            max-width: 1000px; /* 适当加宽以容纳双列布局 */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        /* 识别结果显示区域样式 */
-        #result { 
-            margin-top: 20px; 
-            min-height: 100px; 
-            border: 1px solid #ddd; 
-            padding: 15px; 
-            white-space: pre-wrap; 
+        /* 页面标题 */
+        header {
+            text-align: center;
+        }
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            margin: 0;
+            color: #2c3e50;
         }
 
-        /* 模式选择区域样式 */
-        #mode-selector {
-            margin: 15px 0;
+        /* 卡片基础样式 */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: -0.5rem;
         }
 
-        #mode-selector label {
-            margin-right: 15px;
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        
+        .card-controls {
+             display: flex;
+             align-items: center;
+             gap: 0.75rem;
+             flex-wrap: wrap;
+        }
+
+        /* 结果区域的网格布局 */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        /* 在宽度大于768px的屏幕上，变为两列 */
+        @media (min-width: 768px) {
+            .results-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        /* 特定组件样式 */
+        #recordBtn {
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
             cursor: pointer;
+            background-color: var(--primary-color);
+            color: white;
+            transition: background-color 0.2s;
+            font-weight: 600;
+        }
+        #recordBtn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+        /* 录音时的样式 */
+        #recordBtn.recording {
+            background-color: var(--record-color);
+        }
+        #recordBtn.recording:hover:not(:disabled) {
+            background-color: var(--record-hover);
+        }
+        
+        #status {
+            font-style: italic;
+            color: var(--text-light);
+            text-align: center;
+            height: 1.2em;
         }
 
-        /* 音频播放器样式：全宽显示并有上边距 */
-        #audio-player { 
-            margin-top: 20px; 
-            width: 100%; 
+        .result-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1rem;
+            min-height: 180px;
+            white-space: pre-wrap;
+            color: var(--text-color);
+            flex-grow: 1; 
+            overflow-y: auto;
+            line-height: 1.6;
         }
 
-        /* 状态信息样式（如“准备就绪”、“录音中”等） */
-        .status { 
-            color: #666; 
-            font-style: italic; 
-            margin: 10px 0; 
+        .select, .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .select:focus, .btn:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
-        /* 错误信息样式（红色） */
-        .error { 
-            color: #d32f2f; 
+        #llmBtn, #readAloudBtn {
+             background-color: #28a745;
+             color: white;
+             border-color: #28a745;
+             font-weight: 500;
         }
+        #llmBtn:hover:not(:disabled), #readAloudBtn:hover:not(:disabled) {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+        
+        .btn:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            color: #6c757d;
+        }
+        
+        #mode-selector {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        #mode-selector label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 500;
+        }
+        
+        #audio-player {
+            width: 100%;
+            margin-top: auto; /* 推到底部 */
+        }
+        
+        .error {
+            color: var(--record-color);
+            font-weight: 500;
+        }
+
     </style>
 </head>
-
 <body>
-    <!-- 页面主标题 -->
-    <h1>Whisper 语音识别演示</h1>
+    <div class="container">
+        <header>
+            <h1>AI 语音助手</h1>
+        </header>
 
-    <!-- 模式选择器 -->
-    <div id="mode-selector">
-        <label>
-            <!-- 默认选中的中文识别模式 -->
-            <input type="radio" name="mode" value="chinese" checked> 中文识别
-        </label>
-        <label>
-            <!-- 英文翻译模式 -->
-            <input type="radio" name="mode" value="english"> 英文翻译
-        </label>
+        <!-- 录音控制卡片 -->
+        <div class="card">
+            <div class="card-header">
+                <h3>录音控制</h3>
+                <div id="mode-selector">
+                    <label>
+                        <input type="radio" name="mode" value="chinese" checked> 中文识别
+                    </label>
+                    <label>
+                        <input type="radio" name="mode" value="english"> 英文翻译
+                    </label>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <button id="recordBtn" class="btn">开始录音</button>
+                <div id="status" class="status">准备就绪</div>
+            </div>
+        </div>
+
+        <!-- 结果显示网格 -->
+        <div class="results-grid">
+            <!-- 语音识别结果卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>语音识别结果</h3>
+                </div>
+                <div id="result" class="result-box">识别结果将显示在这里...</div>
+                <audio id="audio-player" controls></audio>
+            </div>
+
+            <!-- 大模型结果卡片 -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>大模型交互</h3>
+                </div>
+                <div class="card-controls">
+                    <select id="llm-model-select" class="select">
+                        <option value="qwen-plus">Qwen-Plus</option>
+                        <option value="qwen-turbo">Qwen-Turbo</option>
+                        <option value="qwen-max">Qwen-Max</option>
+                    </select>
+                    <button id="llmBtn" class="btn" disabled>发送处理</button>
+                </div>
+                <div id="llm-result" class="result-box">大模型回复将显示在这里...</div>
+                <div class="card-controls">
+                     <select id="tts-voice-select" class="select">
+                        <optgroup label="通用场景">
+                            <option value="zh_female_tianmeitaozi_mars_bigtts" selected>甜美桃子 (女)</option>
+                            <option value="zh_female_qingxinnvsheng_mars_bigtts">清新女声</option>
+                            <option value="zh_male_yangguangqingnian_moon_bigtts">阳光青年 (男)</option>
+                            <option value="zh_male_yuanboxiaoshu_moon_bigtts">渊博小叔 (男)</option>
+                        </optgroup>
+                        <optgroup label="多情感音色">
+                            <option value="zh_female_roumeinvyou_emo_v2_mars_bigtts">柔美女友</option>
+                            <option value="zh_male_beijingxiaoye_emo_v2_mars_bigtts">北京小爷</option>
+                        </optgroup>
+                        <optgroup label="角色扮演">
+                            <option value="zh_male_naiqimengwa_mars_bigtts">奶气萌娃</option>
+                            <option value="zh_female_gaolengyujie_moon_bigtts">高冷御姐</option>
+                            <option value="zh_male_aojiaobazong_moon_bigtts">傲娇霸总</option>
+                        </optgroup>
+                        <optgroup label="多语种/口音">
+                            <option value="en_male_adam_mars_bigtts">Adam (美式英语男)</option>
+                            <option value="en_female_sarah_mars_bigtts">Sarah (澳洲英语女)</option>
+                            <option value="multi_male_jingqiangkanye_moon_bigtts">かずね (日语男)</option>
+                            <option value="zh_female_wanwanxiaohe_moon_bigtts">湾湾小何 (台湾口音女)</option>
+                        </optgroup>
+                    </select>
+                    <button id="readAloudBtn" class="btn" style="display: none;">朗读</button>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <!-- 录音按钮，点击后触发录音功能（由 JS 实现） -->
-    <button id="recordBtn" class="btn">开始录音</button>
-
-    <!-- 显示当前系统状态（如“准备就绪”、“识别中”等） -->
-    <div class="status" id="status">准备就绪</div>
-
-    <!-- 显示语音识别的文字结果 -->
-    <div id="result">识别结果将显示在这里...</div>
-
-    <!-- 音频播放器，用于播放录音后的音频文件 -->
-    <audio id="audio-player" controls></audio>
-
-    <!-- 引入外部 JavaScript 文件，实现录音和识别逻辑 -->
+    
     <script src="/static/script.js"></script>
 </body>
 </html>
